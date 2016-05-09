@@ -40,7 +40,7 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
     } else if (number_task == NULL) {
     	number_task = task;
     } else if (alphabet_task == NULL) {
-    	number_task = task;
+    	alphabet_task = task;
     }
     return 0;
 }
