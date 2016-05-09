@@ -49,4 +49,5 @@ void _os_initialization() {
 
 static void _os_idle_task(void *arg) {
 	// while(1) {}
+	PRINT("running _os_idle_task\n");
 }
