@@ -16,8 +16,8 @@ typedef struct _os_context {
 } _os_context_t;
 
 void print_context(addr_t context) {
-	if(context == NULL) return;
-	_os_context_t *ctx = (_os_context_t *)context;
+	if (context == NULL) return;
+	_os_context_t *ctx = (_os_context_t *) context;
     PRINT("reg edi:  0x%x\n", ctx->_edi);
     PRINT("reg esi:  0x%x\n", ctx->_esi);
     PRINT("reg ebp:  0x%x\n", ctx->_ebp);
@@ -78,8 +78,7 @@ addr_t _os_save_context() {
     __asm__ __volatile__("push 4(%%ebp);"::);
     __asm__ __volatile__("push 0(%%ebp);"::);
     __asm__ __volatile__("movl %%esp, %%ebp;"::);
-    /* set resume point where the saved task would execute
-       when it restore */
+    
     __asm__ __volatile__("\
         resume_point:\
             leave;\
