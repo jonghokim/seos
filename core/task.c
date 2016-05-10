@@ -49,15 +49,14 @@ int32u_t eos_destroy_task(eos_tcb_t *task) {
 }
 
 void eos_schedule() {
-	PRINT("eos_schedule start\n");
 	if (_os_current_task != NULL) {
 		addr_t saved_sp = _os_save_context();
 
 		if (saved_sp == 0) {
 			return;
+		} else {
+			_os_current_task->sp = saved_sp;
 		}
-		
-		_os_current_task->sp = saved_sp;
 	}
 
 	if (_os_current_task == NULL) {
@@ -68,7 +67,6 @@ void eos_schedule() {
 		_os_current_task = number_task;
 	}
 
-	PRINT("_os_restore_context\n");
 	 _os_restore_context(_os_current_task->sp);
 }
 
