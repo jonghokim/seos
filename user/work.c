@@ -9,7 +9,7 @@
         int i = 0;
         while(++i) {
             printf("%d", i);
-            _os_schedule(); // 태스크 1 수행 중단, 태스크 2 수행 재개
+            eos_schedule(); // 태스크 1 수행 중단, 태스크 2 수행 재개
             if (i == 20) { i = 0; }
         }
     }
@@ -18,7 +18,7 @@
         int i = 96;
         while(++i) {
             printf("%c", i);
-            _os_schedule(); // 태스크 2 수행 중단, 태스크 1 수행 재개
+            eos_schedule(); // 태스크 2 수행 중단, 태스크 1 수행 재개
             if (i == 122) { i = 96; }
         }
     }
