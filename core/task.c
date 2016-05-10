@@ -41,7 +41,7 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
     PRINT("task: 0x%x, priority: %d\n", (int32u_t)task, priority);
 
     task->priority = priority;
-    task->period = 0;         /* not used in 2nd assignment */
+    // task->period = 0;         /* not used in 2nd assignment */
     task->status = 0;         /* not used in 2nd assignment */
     task->sp = _os_create_context(sblock_start, sblock_size, entry, arg);
 
