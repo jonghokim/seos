@@ -60,40 +60,65 @@ addr_t _os_create_context(addr_t stack_base, size_t stack_size, void (*entry)(vo
 }
 
 void _os_restore_context(addr_t sp) {
-    __asm__ __volatile__ ("movl %0, %%esp;"::"m"(sp));
-    __asm__ __volatile__ ("popl %%edi;"::);
-    __asm__ __volatile__ ("popl %%esi;"::);
-    __asm__ __volatile__ ("popl %%ebp;"::);
-    __asm__ __volatile__ ("popl %%ebx;"::);
-    __asm__ __volatile__ ("popl %%edx;"::);
-    __asm__ __volatile__ ("popl %%ecx;"::);
-    __asm__ __volatile__ ("popl %%eax;"::);
-    __asm__ __volatile__ ("popl _eflags;"::);
-    __asm__ __volatile__ ("ret;"::);
+     __asm__ __volatile__ ("movl %0, %%esp"::"m"(sp));
+
+    /* pop GPRs and eflags */
+    __asm__ __volatile__ ("\
+        popl %%edi;\
+        popl %%esi;\
+        popl %%ebp;\
+        popl %%ebx;\
+        popl %%edx;\
+        popl %%ecx;\
+        popl %%eax;\
+        popl _eflags;"
+        ::
+    );
+
+    /* transfer control to $resume_eip
+       which is declared at _os_save_context()
+       or a function if the context hasn't been stored before */
+    __asm__ __volatile__("ret;"::);d
 }
 
 addr_t _os_save_context() {
+     /* set %eax to zero  */
     __asm__ __volatile__("movl %0, %%eax;"::"n"(0));
-    __asm__ __volatile__("push $resume_point;"::);
 
-    // save context
-    __asm__ __volatile__ ("push _eflags;"::);
-    __asm__ __volatile__ ("push %%eax;"::);
-    __asm__ __volatile__ ("push %%ecx;"::);
-    __asm__ __volatile__ ("push %%edx;"::);
-    __asm__ __volatile__ ("push %%ebx;"::);
-    __asm__ __volatile__ ("push %%ebp;"::);
-    __asm__ __volatile__ ("push %%esi;"::);
-    __asm__ __volatile__ ("push %%edi;"::);
+    /* push resume point where the task whoose this context
+       would be resumed when this context is restored */
+    __asm__ __volatile__("push $resume_eip;"::);
 
+    /* push GPRs and eflags */
+    __asm__ __volatile__ ("\
+        push _eflags;\
+        push %%eax;\
+        push %%ecx;\
+        push %%edx;\
+        push %%ebx;\
+        push %%ebp;\
+        push %%esi;\
+        push %%edi;"
+        ::
+    );
+
+    /* set return value as %esp */
     __asm__ __volatile__("movl %%esp, %%eax;"::);
-    __asm__ __volatile__("push 4(%%ebp);"::);
-    __asm__ __volatile__("push 0(%%ebp);"::);
-    __asm__ __volatile__("movl %%esp, %%ebp;"::);
+
+    /* push old %ebp and %eip then set %ebp to %esp
+       so that original old %ebp and %eip could be used
+       when this context are being restored */
+    __asm__ __volatile__("\
+        push 4(%%ebp);\
+        push 0(%%ebp);\
+        movl %%esp, %%ebp;"
+        ::
+    );
+
     /* set resume point where the saved task would execute
        when it restore */
     __asm__ __volatile__("\
-        resume_point:\
+        resume_eip:\
             leave;\
             ret;"
         ::
