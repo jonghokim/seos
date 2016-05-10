@@ -23,6 +23,6 @@
         }
     }
     void eos_user_main() {
-        eos_create_task(&tcb1, stack1, 8096, print_number, NULL, 0) // 태스크 1 생성
-        eos_create_task(&tcb2, stack2, 8096, print_alphabet, NULL, 0) // 태스크 2 생성
+        eos_create_task(&tcb1, stack1, 8096, print_number, NULL, 0); // 태스크 1 생성
+        eos_create_task(&tcb2, stack2, 8096, print_alphabet, NULL, 0); // 태스크 2 생성
     }
