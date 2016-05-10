@@ -1,7 +1,7 @@
 #include <core/eos.h>
 
-    int32u stack1[8096]; // stack for task1
-    int32u stack2[8096]; // stack for task2
+    int32u_t stack1[8096]; // stack for task1
+    int32u_t stack2[8096]; // stack for task2
     eos_tcb_t tcb1; // tcb for task1
     eos_tcb_t tcb2; // tcb for task2
     /* task1 function - print number 1 to 20 repeatedly */
