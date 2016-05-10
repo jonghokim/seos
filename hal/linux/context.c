@@ -68,7 +68,7 @@ void _os_restore_context(addr_t sp) {
     __asm__ __volatile__ ("popl %%edx;"::);
     __asm__ __volatile__ ("popl %%ecx;"::);
     __asm__ __volatile__ ("popl %%eax;"::);
-    __asm__ __volatile__ ("popfl;"::);
+    __asm__ __volatile__ ("popl _eflags;"::);
     __asm__ __volatile__ ("ret;"::);
 }
 
