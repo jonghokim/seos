@@ -30,21 +30,33 @@ void print_context(addr_t context) {
 }
 
 addr_t _os_create_context(addr_t stack_base, size_t stack_size, void (*entry)(void *), void *arg) {
-    addr_t *sp = (addr_t *) (stack_base + stack_size);
+    addr_t sp = stack_base + stack_size;
 
-    (*(--sp)) = (addr_t) arg;
-    (*(--sp)) = (addr_t) NULL;
-    (*(--sp)) = (addr_t) entry;
-    (*(--sp)) = (addr_t) NULL;
-    (*(--sp)) = (addr_t) NULL;
-    (*(--sp)) = (addr_t) NULL;
-    (*(--sp)) = (addr_t) NULL;
-    (*(--sp)) = (addr_t) NULL;
-    (*(--sp)) = (addr_t) NULL;
-    (*(--sp)) = (addr_t) NULL;
-    (*(--sp)) = (addr_t) NULL;
+    addr_t s_eip = (addr_t)entry;
+    addr_t s_ebp = sp;
+    addr_t s_null = (addr_t)NULL;
 
-    return (addr_t) sp;
+    /* push a new context */
+    sp -= 4;
+    *(addr_t *)sp = s_eip;
+    sp -= 4;
+    *(addr_t *)sp = s_null;
+    sp -= 4;
+    *(addr_t *)sp = s_null;
+    sp -= 4;
+    *(addr_t *)sp = s_null;
+    sp -= 4;
+    *(addr_t *)sp = s_null;
+    sp -= 4;
+    *(addr_t *)sp = s_null;
+    sp -= 4;
+    *(addr_t *)sp = s_ebp;
+    sp -= 4;
+    *(addr_t *)sp = s_null;
+    sp -= 4;
+    *(addr_t *)sp = s_null;
+
+    return sp;
 }
 
 void _os_restore_context(addr_t sp) {
