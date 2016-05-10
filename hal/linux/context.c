@@ -56,7 +56,7 @@ void _os_restore_context(addr_t sp) {
     __asm__ __volatile__ ("popl %%edx;"::);
     __asm__ __volatile__ ("popl %%ecx;"::);
     __asm__ __volatile__ ("popl %%eax;"::);
-    __asm__ __volatile__ ("popl _eflags;"::);
+    __asm__ __volatile__ ("popfl;"::);
     __asm__ __volatile__ ("ret;"::);
 }
 
@@ -65,7 +65,7 @@ addr_t _os_save_context() {
     __asm__ __volatile__("push $resume_point;"::);
 
     // save context
-    __asm__ __volatile__ ("pushl _eflags;"::);
+    __asm__ __volatile__ ("pushfl;"::);
     __asm__ __volatile__ ("pushl %%eax;"::);
     __asm__ __volatile__ ("pushl %%ecx;"::);
     __asm__ __volatile__ ("pushl %%edx;"::);
