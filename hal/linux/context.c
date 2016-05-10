@@ -77,14 +77,14 @@ addr_t _os_save_context() {
     __asm__ __volatile__("push $resume_point;"::);
 
     // save context
-    __asm__ __volatile__ ("pushl _eflags;"::);
-    __asm__ __volatile__ ("pushl %%eax;"::);
-    __asm__ __volatile__ ("pushl %%ecx;"::);
-    __asm__ __volatile__ ("pushl %%edx;"::);
-    __asm__ __volatile__ ("pushl %%ebx;"::);
-    __asm__ __volatile__ ("pushl %%ebp;"::);
-    __asm__ __volatile__ ("pushl %%esi;"::);
-    __asm__ __volatile__ ("pushl %%edi;"::);
+    __asm__ __volatile__ ("push _eflags;"::);
+    __asm__ __volatile__ ("push %%eax;"::);
+    __asm__ __volatile__ ("push %%ecx;"::);
+    __asm__ __volatile__ ("push %%edx;"::);
+    __asm__ __volatile__ ("push %%ebx;"::);
+    __asm__ __volatile__ ("push %%ebp;"::);
+    __asm__ __volatile__ ("push %%esi;"::);
+    __asm__ __volatile__ ("push %%edi;"::);
 
     __asm__ __volatile__("movl %%esp, %%eax;"::);
     __asm__ __volatile__("push 4(%%ebp);"::);
