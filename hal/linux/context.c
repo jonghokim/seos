@@ -77,7 +77,7 @@ addr_t _os_save_context() {
     __asm__ __volatile__("push $resume_point;"::);
 
     // save context
-    __asm__ __volatile__ ("pushfl;"::);
+    __asm__ __volatile__ ("pushl _eflags;"::);
     __asm__ __volatile__ ("pushl %%eax;"::);
     __asm__ __volatile__ ("pushl %%ecx;"::);
     __asm__ __volatile__ ("pushl %%edx;"::);
