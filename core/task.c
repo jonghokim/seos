@@ -34,6 +34,7 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
     task->sp = _os_create_context(sblock_start, sblock_size, entry, arg);
     task->priority = priority;
     task->status = READY;
+    PRINT("task->sp: 0x%x\n", task->sp);
 
     if (idle_task == NULL) {
     	idle_task = task;
