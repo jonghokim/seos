@@ -7,22 +7,16 @@
  ********************************************************/
 #include <core/eos.h>
 
-#define READY       1
-#define RUNNING     2
-#define WAITING     3
+#define READY		1
+#define RUNNING		2
+#define WAITING		3
 
-/**
- * In 2nd assignment, there would be only three tasks, which are
- *   1. idle task
- *   2. task wrapped of print_number
- *   3. task wrapped of print_alphabet
- *
- * Every should-be-implemented functions in 2nd assignment
- * are implemented in a context of above.
+/*
+ * Project 2 Task Pointer
  */
-static eos_tcb_t *mytask1 = 0;
-static eos_tcb_t *mytask2 = 0;
-static eos_tcb_t *mytask3 = 0;
+static eos_tcb_t *idle_task;
+static eos_tcb_t *number_task;
+static eos_tcb_t *alphabet_task;
 
 /*
  * Queue (list) of tasks that are ready to run.
@@ -34,64 +28,52 @@ static _os_node_t *_os_ready_queue[LOWEST_PRIORITY + 1];
  */
 static eos_tcb_t *_os_current_task;
 
-/**
- * Temporary implementation for 2nd assignment.
- */
 int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_size, void (*entry)(void *arg), void *arg, int32u_t priority) {
-    PRINT("task: 0x%x, priority: %d\n", (int32u_t)task, priority);
+	PRINT("task: 0x%x, priority: %d\n", (int32u_t)task, priority);
 
     task->priority = priority;
-    task->status = 0;         /* not used in 2nd assignment */
+    task->status = READY;
     task->sp = _os_create_context(sblock_start, sblock_size, entry, arg);
 
-    if (mytask1 == NULL) {
-        mytask1 = task;
-    } else if (mytask2 == NULL) {
-        mytask2 = task;
-    } else if (mytask3 == NULL) {
-        mytask3 = task;
-    } else {
-        return -1;  /* error return code */
+    if (idle_task == NULL) {
+    	idle_task = task;
+    } else if (number_task == NULL) {
+    	number_task = task;
+    } else if (alphabet_task == NULL) {
+    	alphabet_task = task;
     }
-
     return 0;
 }
 
 int32u_t eos_destroy_task(eos_tcb_t *task) {
 }
 
-/**
- * Temporary implementation for 2nd assignment.
- */
 void eos_schedule() {
-    /* save the current context and store the returned stack pointer */
-    if (_os_current_task != NULL) {
-        addr_t sav_ctx_sp = _os_save_context();
+	PRINT("eos_schedule start\n");
+	if (_os_current_task != NULL) {
+		addr_t saved_sp = _os_save_context();
 
-        /* restored task will be executed from here with the value 0 */
-        if (sav_ctx_sp == 0) return;
+		if (saved_sp == 0) {
+			return;
+		}
+		
+		_os_current_task->sp = saved_sp;
+	}
 
-        _os_current_task->sp = sav_ctx_sp;
-    }
+	if (_os_current_task == NULL) {
+		_os_current_task = number_task;
+	} else if (_os_current_task == number_task) {
+		_os_current_task = alphabet_task;
+	} else if (_os_current_task == alphabet_task) {
+		_os_current_task = number_task;
+	}
 
-    /* scheduling */
-    if (_os_current_task == NULL) {
-        _os_current_task = mytask2;
-    } else if (_os_current_task == mytask2) {
-        _os_current_task = mytask3;
-    } else if (_os_current_task == mytask3) {
-        _os_current_task = mytask2;
-    } else {
-        printf("ERROR: eos_schedule() invalid current task\n");
-        return -1;      /* error return code */
-    }
-
-    /* dispatch the next task via calling _os_restore_context() */
-    _os_restore_context(_os_current_task->sp);
+	PRINT("_os_restore_context\n");
+	 _os_restore_context(_os_current_task->sp);
 }
 
 eos_tcb_t *eos_get_current_task() {
-    return _os_current_task;
+	return _os_current_task;
 }
 
 void eos_change_priority(eos_tcb_t *task, int32u_t priority) {
@@ -116,16 +98,16 @@ void eos_sleep(int32u_t tick) {
 }
 
 void _os_init_task() {
-    PRINT("initializing task module.\n");
+	PRINT("initializing task module.\n");
 
-    /* init current_task */
-    _os_current_task = NULL;
+	/* init current_task */
+	_os_current_task = NULL;
 
-    /* init multi-level ready_queue */
-    int32u_t i;
-    for (i = 0; i < LOWEST_PRIORITY; i++) {
-        _os_ready_queue[i] = NULL;
-    }
+	/* init multi-level ready_queue */
+	int32u_t i;
+	for (i = 0; i < LOWEST_PRIORITY; i++) {
+		_os_ready_queue[i] = NULL;
+	}
 }
 
 void _os_wait(_os_node_t **wait_queue) {
