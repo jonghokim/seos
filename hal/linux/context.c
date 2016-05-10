@@ -93,7 +93,7 @@ addr_t _os_save_context() {
     /* set resume point where the saved task would execute
        when it restore */
     __asm__ __volatile__("\
-        resume_eip:\
+        resume_point:\
             leave;\
             ret;"
         ::
