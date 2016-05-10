@@ -32,8 +32,8 @@ void print_context(addr_t context) {
 addr_t _os_create_context(addr_t stack_base, size_t stack_size, void (*entry)(void *), void *arg) {
     addr_t *sp = (addr_t *) (stack_base + stack_size);
 
-    (*(--sp)) = (addr_t) arg;
-    (*(--sp)) = (addr_t) NULL;
+    // (*(--sp)) = (addr_t) arg;
+    // (*(--sp)) = (addr_t) NULL;
     (*(--sp)) = (addr_t) entry;
     (*(--sp)) = (addr_t) NULL;
     (*(--sp)) = (addr_t) NULL;
