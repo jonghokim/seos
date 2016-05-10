@@ -30,33 +30,21 @@ void print_context(addr_t context) {
 }
 
 addr_t _os_create_context(addr_t stack_base, size_t stack_size, void (*entry)(void *), void *arg) {
-    addr_t sp = stack_base + stack_size;
+    addr_t *sp = (addr_t *) (stack_base + stack_size);
 
-    addr_t s_eip = (addr_t)entry;
-    addr_t s_ebp = sp;
-    addr_t s_null = (addr_t)NULL;
+    (*(--sp)) = (addr_t) arg;
+    (*(--sp)) = (addr_t) NULL;
+    (*(--sp)) = (addr_t) entry;
+    (*(--sp)) = (addr_t) NULL;
+    (*(--sp)) = (addr_t) NULL;
+    (*(--sp)) = (addr_t) NULL;
+    (*(--sp)) = (addr_t) NULL;
+    (*(--sp)) = (addr_t) NULL;
+    (*(--sp)) = (addr_t) NULL;
+    (*(--sp)) = (addr_t) NULL;
+    (*(--sp)) = (addr_t) NULL;
 
-    /* push a new context */
-    sp -= 4;
-    *(addr_t *)sp = s_eip;
-    sp -= 4;
-    *(addr_t *)sp = s_null;
-    sp -= 4;
-    *(addr_t *)sp = s_null;
-    sp -= 4;
-    *(addr_t *)sp = s_null;
-    sp -= 4;
-    *(addr_t *)sp = s_null;
-    sp -= 4;
-    *(addr_t *)sp = s_null;
-    sp -= 4;
-    *(addr_t *)sp = s_ebp;
-    sp -= 4;
-    *(addr_t *)sp = s_null;
-    sp -= 4;
-    *(addr_t *)sp = s_null;
-
-    return sp;
+    return (addr_t) sp;
 }
 
 void _os_restore_context(addr_t sp) {
@@ -77,14 +65,14 @@ addr_t _os_save_context() {
     __asm__ __volatile__("push $resume_point;"::);
 
     // save context
-    __asm__ __volatile__ ("push _eflags;"::);
-    __asm__ __volatile__ ("push %%eax;"::);
-    __asm__ __volatile__ ("push %%ecx;"::);
-    __asm__ __volatile__ ("push %%edx;"::);
-    __asm__ __volatile__ ("push %%ebx;"::);
-    __asm__ __volatile__ ("push %%ebp;"::);
-    __asm__ __volatile__ ("push %%esi;"::);
-    __asm__ __volatile__ ("push %%edi;"::);
+    __asm__ __volatile__ ("pushl _eflags;"::);
+    __asm__ __volatile__ ("pushl %%eax;"::);
+    __asm__ __volatile__ ("pushl %%ecx;"::);
+    __asm__ __volatile__ ("pushl %%edx;"::);
+    __asm__ __volatile__ ("pushl %%ebx;"::);
+    __asm__ __volatile__ ("pushl %%ebp;"::);
+    __asm__ __volatile__ ("pushl %%esi;"::);
+    __asm__ __volatile__ ("pushl %%edi;"::);
 
     __asm__ __volatile__("movl %%esp, %%eax;"::);
     __asm__ __volatile__("push 4(%%ebp);"::);
