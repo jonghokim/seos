@@ -29,7 +29,7 @@ void _os_initialization() {
 
 	// Create idle task.
 	PRINT("creating idle task.\n");
-	eos_create_task(&idle_task, (int32u_t *)idle_stack, 8096, _os_idle_task, NULL, LOWEST_PRIORITY);
+	eos_create_task(&idle_task, (int32u_t *)idle_stack, 8096, &_os_idle_task, NULL, LOWEST_PRIORITY);
 
 	// After finishing initializations by kernel,
 	// give users a chance to do application specific initializations.
