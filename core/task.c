@@ -40,12 +40,12 @@ int32u_t eos_destroy_task(eos_tcb_t *task) {
 }
 
 void eos_schedule() {
+    _os_node_t **head;
     if (_os_current_task != NULL && _os_current_task->status == RUNNING) {
         _os_current_task->status = READY;
 
-        _os_node_t **head = _os_ready_queue + _os_current_task->priority;
+        head = _os_ready_queue + _os_current_task->priority;
         _os_add_node_tail(head, &(_os_current_task->node));
-
         _os_set_ready(_os_current_task->priority);
     }
 
@@ -59,12 +59,13 @@ void eos_schedule() {
         }
     }
 
-    _os_node_t **head = _os_ready_queue + _os_get_highest_priority();
-    _os_current_task = (eos_tcb_t *)(*head)->ptr_data;
+    head = _os_ready_queue + _os_get_highest_priority();
+    _os_current_task = (eos_tcb_t *) (*head)->ptr_data;
     _os_remove_node(head, (*head));
-    if ((*head) == NULL) _os_unset_ready(_os_current_task->priority);
+    if ((*head) == NULL) {
+        _os_unset_ready(_os_current_task->priority);   
+    }
 
-    /* dispatch the next task via calling _os_restore_context() */
     _os_current_task->status = RUNNING;
     _os_restore_context(_os_current_task->sp);
 }
