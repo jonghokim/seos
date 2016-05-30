@@ -84,6 +84,7 @@ typedef struct tcb {
     int32u_t status;
     int32u_t period;
     eos_alarm_t alarm;
+    _os_node_t node;
 } eos_tcb_t;
 
 /*

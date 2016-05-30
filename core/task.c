@@ -30,7 +30,7 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
     task->node.priority = 0;  
     task->sp = _os_create_context(sblock_start, sblock_size, entry, arg);
 
-	_os_add_node_tail(_os_ready_queue + priority, &(theask->node));
+	_os_add_node_tail(_os_ready_queue + priority, &(task->node));
 	_os_set_ready(priority);
 
     return 0;
