@@ -50,7 +50,7 @@ void eos_trigger_counter(eos_counter_t* counter) {
 		}
 
 		alarm->handler(alarm->arg);
-		eos_set_alarm(&system_timer, alrm, 0, NULL, NULL);
+		eos_set_alarm(&system_timer, alarm, 0, NULL, NULL);
 		// _os_remove_node(alarm_queue, alarm);
 	}
 
