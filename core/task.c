@@ -36,10 +36,12 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
     return 0;
 }
 
+
 int32u_t eos_destroy_task(eos_tcb_t *task) {
 }
 
 void eos_schedule() {
+    /* handle when a current task was preempted */
     if (_os_current_task != NULL && _os_current_task->status == RUNNING) {
         _os_current_task->status = READY;
 
@@ -49,24 +51,27 @@ void eos_schedule() {
         _os_set_ready(_os_current_task->priority);
     }
 
+    /* save the current context and store the returned stack pointer */
     if (_os_current_task != NULL) {
-        addr_t saved_sp = _os_save_context();
-        
-        if (saved_sp == 0) {
-            return;
-        } else {
-            _os_current_task->sp = saved_sp;
-        }
+        addr_t sav_ctx_sp = _os_save_context();
+
+        /* restored task will be executed from here with the value 0 */
+        if (sav_ctx_sp == 0) return;
+
+        _os_current_task->sp = sav_ctx_sp;
     }
 
+    /* Multi-level scheduling */
+    /* fetch a task from a highest prioirty ready queue and remove a node of the task */
     _os_node_t **head = _os_ready_queue + _os_get_highest_priority();
     _os_current_task = (eos_tcb_t *)(*head)->ptr_data;
-    _os_remove_node(head, (*head));
+    if (_os_remove_node(head, (*head)) == 0) {
+        PRINT("ERROR: _os_remove_node() returned 0\n");
+    }
+    /* unmask the bitmap for in case of the queue being empty */
+    if ((*head) == NULL) _os_unset_ready(_os_current_task->priority);
 
-    if ((*head) == NULL) {
-        _os_unset_ready(_os_current_task->priority);  
-    } 
-
+    /* dispatch the next task via calling _os_restore_context() */
     _os_current_task->status = RUNNING;
     _os_restore_context(_os_current_task->sp);
 }
