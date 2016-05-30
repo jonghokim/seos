@@ -65,7 +65,6 @@ static void timer_interrupt_handler(int8s_t irqnum, void *arg) {
 }
 
 void _os_init_timer() {
-	PRINT("initializing timer module.\n");
 	eos_init_counter(&system_timer, 0);
 
 	/* register timer interrupt handler */
