@@ -16,21 +16,24 @@ int8u_t eos_init_counter(eos_counter_t *counter, int32u_t init_value) {
 }
 
 void eos_set_alarm(eos_counter_t* counter, eos_alarm_t* alarm, int32u_t timeout, void (*entry)(void *arg), void *arg) {
-	_os_node_t **alarm_queue = &(counter->alarm_queue);
-	_os_node_t *alarm_queue_node = &(alarm->alarm_queue_node);
+	_os_node_t **head = &(counter->alarm_queue);
+	_os_node_t *node = &(alarm->alarm_queue_node);
 
-	_os_remove_node(alarm_queue, alarm_queue_node);
-	if (timeout <= 0 || entry == NULL) {
-		return;	
-	}
+	/* remove the alarm from an alarm queue of the count */
+	_os_remove_node(head, node);
 
+	bool_t rls_case = (timeout == 0) || (entry == NULL);   // release case
+	if (rls_case) return;
+
+	/* initialize the alarm */
 	alarm->timeout = timeout;
 	alarm->handler = entry;
 	alarm->arg = arg;
 
-	alarm_queue_node->ptr_data = alarm;
-	alarm_queue_node->priority = timeout;
-	_os_add_node_priority(alarm_queue, alarm_queue_node);
+    /* initialize a queue node of the alarm and push into the alarm queue in asen order */
+	node->ptr_data = alarm;
+	node->priority = timeout;
+	_os_add_node_priority(head, node);
 }
 
 eos_counter_t* eos_get_system_timer() {
@@ -40,18 +43,16 @@ eos_counter_t* eos_get_system_timer() {
 void eos_trigger_counter(eos_counter_t* counter) {
 	counter->tick += 1;
 	PRINT("tick %d\n", counter->tick);
-	_os_node_t **alarm_queue = &(counter->alarm_queue);
-	
-	while (*alarm_queue != NULL) {
-		eos_alarm_t *alarm = (eos_alarm_t *) (*alarm_queue)->ptr_data;
 
-		if (alarm->timeout > counter->tick) {
-			break;
-		}
+	_os_node_t **head = &(counter->alarm_queue);
+	while ((*head) != NULL) {
+		eos_alarm_t *alrm = (eos_alarm_t *)(*head)->ptr_data;
 
-		alarm->handler(alarm->arg);
-		eos_set_alarm(&system_timer, alarm, 0, NULL, NULL);
-		// _os_remove_node(alarm_queue, alarm);
+		if (alrm->timeout > counter->tick) break;
+
+		/* call a handler of the timeout-ed alarm, then release it from the queue */
+		alrm->handler(alrm->arg);
+		eos_set_alarm(&system_timer, alrm, 0, NULL, NULL);
 	}
 
 	eos_schedule();
