@@ -16,7 +16,7 @@ void task3() {
     while(1) { PRINT("C\n"); eos_sleep(0); }
 }
 void eos_user_main() {
-    eos_create_task(&tcb1, stack1, 8096, eos_set_period(&tcb1, 2);
-    eos_create_task(&tcb2, stack2, 8096, eos_set_period(&tcb2, 4);
-    eos_create_task(&tcb3, stack3, 8096, eos_set_period(&tcb3, 8); 
+    eos_create_task(&tcb1, stack1, 8096, eos_set_period(&tcb1, 2));
+    eos_create_task(&tcb2, stack2, 8096, eos_set_period(&tcb2, 4));
+    eos_create_task(&tcb3, stack3, 8096, eos_set_period(&tcb3, 8)); 
 }
