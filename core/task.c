@@ -90,7 +90,7 @@ int32u_t eos_get_priority(eos_tcb_t *task) {
 }
 
 void eos_set_period(eos_tcb_t *task, int32u_t period){
-	task->period = period;
+    task->period = period;
 }
 
 int32u_t eos_get_period(eos_tcb_t *task) {
@@ -103,15 +103,9 @@ int32u_t eos_resume_task(eos_tcb_t *task) {
 }
 
 void eos_sleep(int32u_t tick) {
-    eos_tcb_t *tsk = _os_current_task;
-    eos_counter_t *cnter = eos_get_system_timer();
-    int32u_t timeout = (cnter->tick) + (tsk->period);
-
-    /* make a status of the task WAITING and set an alarm of the task */
-    tsk->status = WAITING;
-    eos_set_alarm(cnter, &(tsk->alarm), timeout, _os_wakeup_sleeping_task, tsk);
-
-    /* rescheduling */
+    int32u_t timeout = (eos_get_system_timer()->tick) + (eos_get_current_task()->period);
+    eos_get_current_task()->status = WAITING;
+    eos_set_alarm(eos_get_system_timer(), &(eos_get_current_task()->alarm), timeout, _os_wakeup_sleeping_task, eos_get_current_task());
     eos_schedule();
 }
 
@@ -138,10 +132,8 @@ void _os_wakeup_all(_os_node_t **wait_queue, int32u_t queue_type) {
 }
 
 void _os_wakeup_sleeping_task(void *arg) {
-	eos_tcb_t *tsk = (eos_tcb_t *)arg;
-    
-    /* set the task READY, put into the ready queue and mask the bitmap */
-    tsk->status = READY;
-    _os_add_node_tail(_os_ready_queue+tsk->priority, &(tsk->node));
-    _os_set_ready(tsk->priority);
+    eos_tcb_t *task = (eos_tcb_t *) arg;
+    task->status = READY;
+    _os_add_node_tail(_os_ready_queue + task->priority, &(task->node));
+    _os_set_ready(task->priority);
 }
