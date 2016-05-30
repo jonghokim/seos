@@ -24,14 +24,18 @@ static eos_tcb_t *_os_current_task;
 int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_size, void (*entry)(void *arg), void *arg, int32u_t priority) {
 	PRINT("task: 0x%x, priority: %d\n", (int32u_t)task, priority);
 
+    /* initialize a tcb */
+    task->sp = _os_create_context(sblock_start, sblock_size, entry, arg);
     task->priority = priority;
     task->status = READY;
     task->node.ptr_data = task;
-    task->node.priority = 0;  
-    task->sp = _os_create_context(sblock_start, sblock_size, entry, arg);
+    task->node.priority = 0;    // no priority between nodes in a same queue
 
-	_os_add_node_tail(_os_ready_queue + priority, &(task->node));
-	_os_set_ready(priority);
+    /* put the node of the tcb to the ready queue */
+    _os_add_node_tail(_os_ready_queue+priority, &(task->node));
+
+    /* mask the ready table */
+    _os_set_ready(priority);
 
     return 0;
 }
