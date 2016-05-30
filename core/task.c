@@ -59,7 +59,7 @@ void eos_schedule() {
 
     _os_node_t **head = _os_ready_queue + _os_get_highest_priority();
     _os_current_task = (eos_tcb_t *) (*head)->ptr_data;
-    _os_remove_node(head, (*head))
+    _os_remove_node(head, (*head));
  
     if (*head == NULL) {
     	_os_unset_ready(_os_current_task->priority);
