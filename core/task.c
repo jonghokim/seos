@@ -12,13 +12,6 @@
 #define WAITING		3
 
 /*
- * Project 2 Task Pointer
- */
-static eos_tcb_t *idle_task;
-static eos_tcb_t *number_task;
-static eos_tcb_t *alphabet_task;
-
-/*
  * Queue (list) of tasks that are ready to run.
  */
 static _os_node_t *_os_ready_queue[LOWEST_PRIORITY + 1];
@@ -33,15 +26,13 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
 
     task->priority = priority;
     task->status = READY;
+    task->node.ptr_data = task;
+    task->node.priority = 0;  
     task->sp = _os_create_context(sblock_start, sblock_size, entry, arg);
 
-    if (idle_task == NULL) {
-    	idle_task = task;
-    } else if (number_task == NULL) {
-    	number_task = task;
-    } else if (alphabet_task == NULL) {
-    	alphabet_task = task;
-    }
+	_os_add_node_tail(_os_ready_queue + priority, &(theask->node));
+	_os_set_ready(priority);
+
     return 0;
 }
 
@@ -49,7 +40,14 @@ int32u_t eos_destroy_task(eos_tcb_t *task) {
 }
 
 void eos_schedule() {
-	if (_os_current_task != NULL) {
+	if (_os_current_task != NULL && _os_current_task->status == RUNNING) {
+        _os_current_task->status = READY;
+        _os_node_t **head = _os_ready_queue + _os_current_task->priority;
+        _os_add_node_tail(head, &(_os_current_task->node));
+        _os_set_ready(_os_current_task->priority);
+    }
+
+    if (_os_current_task != NULL) {
 		addr_t saved_sp = _os_save_context();
 
 		if (saved_sp == 0) {
@@ -59,15 +57,15 @@ void eos_schedule() {
 		}
 	}
 
-	if (_os_current_task == NULL) {
-		_os_current_task = number_task;
-	} else if (_os_current_task == number_task) {
-		_os_current_task = alphabet_task;
-	} else if (_os_current_task == alphabet_task) {
-		_os_current_task = number_task;
-	}
-
-	 _os_restore_context(_os_current_task->sp);
+    _os_node_t **head = _os_ready_queue + _os_get_highest_priority();
+    _os_current_task = (eos_tcb_t *) (*head)->ptr_data;
+    _os_remove_node(head, (*head))
+ 
+    if (*head == NULL) {
+    	_os_unset_ready(_os_current_task->priority);
+    } 
+    _os_current_task->status = RUNNING;
+    _os_restore_context(_os_current_task->sp);
 }
 
 eos_tcb_t *eos_get_current_task() {
@@ -81,6 +79,7 @@ int32u_t eos_get_priority(eos_tcb_t *task) {
 }
 
 void eos_set_period(eos_tcb_t *task, int32u_t period){
+	task->period = period;
 }
 
 int32u_t eos_get_period(eos_tcb_t *task) {
@@ -93,6 +92,10 @@ int32u_t eos_resume_task(eos_tcb_t *task) {
 }
 
 void eos_sleep(int32u_t tick) {
+    int32u_t timeout = (eos_get_system_timer()->tick) + (eos_get_current_task()->period);
+    eos_get_current_task()->status = WAITING;
+    eos_set_alarm(eos_get_system_timer(), &(eos_get_current_task()->alarm), timeout, _os_wakeup_sleeping_task, eos_get_current_task());
+    eos_schedule();
 }
 
 void _os_init_task() {
@@ -118,4 +121,8 @@ void _os_wakeup_all(_os_node_t **wait_queue, int32u_t queue_type) {
 }
 
 void _os_wakeup_sleeping_task(void *arg) {
+	eos_tcb_t *task = (eos_tcb_t *) arg;
+    task->status = READY;
+    _os_add_node_tail(_os_ready_queue + task->priority, &(task->node));
+    _os_set_ready(task->priority);
 }
