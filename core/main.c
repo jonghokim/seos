@@ -38,7 +38,7 @@ void _os_initialization() {
 
 	// Start multitasking.
 	PRINT("finishing initialization. starting multitasking.\n");
-	_os_multitasking = 1;
+	_os_multitasking = 3;
 	eos_enable_interrupt();
 
 	eos_schedule();
