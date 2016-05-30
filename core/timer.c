@@ -38,8 +38,8 @@ eos_counter_t* eos_get_system_timer() {
 }
 
 void eos_trigger_counter(eos_counter_t* counter) {
-	PRINT("tick\n");
 	counter->tick += 1;
+	PRINT("tick %d\n", counter->tick);
 	_os_node_t **alarm_queue = &(counter->alarm_queue);
 	
 	while (*alarm_queue != NULL) {
@@ -63,6 +63,7 @@ static void timer_interrupt_handler(int8s_t irqnum, void *arg) {
 }
 
 void _os_init_timer() {
+	PRINT("initializing timer module.\n");
 	eos_init_counter(&system_timer, 0);
 
 	/* register timer interrupt handler */
