@@ -117,6 +117,17 @@ void _os_wait(_os_node_t **wait_queue) {
 }
 
 void _os_wakeup_single(_os_node_t **wait_queue, int32u_t queue_type) {
+     /* remove from wait queue */
+    eos_tcb_t *tsk = (*wait_queue)->ptr_data;
+    _os_remove_node(wait_queue, *wait_queue);
+
+    /* put the task to the ready queue and set status READY */
+    tsk->status = READY;
+
+    _os_node_t **head = _os_ready_queue + tsk->priority;
+    _os_add_node_tail(head, &(tsk->node));
+
+    _os_set_ready(tsk->priority);
 }
 
 void _os_wakeup_all(_os_node_t **wait_queue, int32u_t queue_type) {

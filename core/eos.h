@@ -144,6 +144,12 @@ extern void eos_sleep(int32u_t tick);
  * The Semaphore structure
  */
 typedef struct eos_semaphore {
+	// 공유 자원의 개수
+	int32u_t count;
+	// 태스크 wait 큐 
+	_os_node_t *wait_queue;
+	// 0:FIFO, 1:prioriry-base
+	int8u_t queue_type;
 } eos_semaphore_t;
 
 /*
@@ -239,6 +245,22 @@ extern void eos_disable_irq_line(int32u_t irq);
  * The Message Queue structure
  */
 typedef struct eos_mqueue {
+	// 메시지큐에 들어갈 수 있는 최대 메시지 개수
+	int16u_t queue_size;
+	// 한 메시지가 전달할 수 있는 데이터 크기 (in bytes)
+	int8u_t msg_size;
+	// 메시지큐에 할당된 메모리의 첫 주소 
+	void *queue_start;
+	// 메시지큐에서 실제로 메시지가 저장된 첫 위치
+	void *front;
+	// 메시지큐에서 실제로 메시지가 저장된 마지막 위치
+	void *rear;
+	// 0:FIFO, 1:priority-base
+	int8u_t queue_type;
+	// 메시지큐에 메시지를 보낼 수 있는 권한을 관리하는 세마포
+	eos_semaphore_t putsem;
+	// 메시지큐에서 메시지를 받을 수 있는 권한을 관리하는 세마포
+	eos_semaphore_t getsem;
 } eos_mqueue_t;
 
 /*
