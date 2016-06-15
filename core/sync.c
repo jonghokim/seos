@@ -15,39 +15,42 @@ void eos_init_semaphore(eos_semaphore_t *sem, int32u_t initial_count, int8u_t qu
 }
 
 int32u_t eos_acquire_semaphore(eos_semaphore_t *sem, int32s_t timeout) {
+	// timeout 처리를 위해 system timer 를 가져온다
 	eos_counter_t *sys_timer = eos_get_system_timer();
-	int32u_t timeout_tick = (timeout <= 0) ? 0 : timeout + sys_timer->tick;   // not 0 if there is an timeout
-	int32u_t prev_eflags;
+	// timeout 시간에 현재 system timer ticker 을 더해서 timeout 이 발생할 tick 을 구한다.
+	int32u_t timeout_tick = timeout + sys_timer->tick;
+	int32u_t flag;
 
-	/* waiting semaphore loop */
 	while (1) {
-		bool_t timeouted = (timeout_tick != 0) && (sys_timer->tick > timeout_tick);
-		prev_eflags= eos_disable_interrupt();
+		// timeout 됬는지 여부를 boolean 으로 저장한다.
+		bool_t timeouted = (timeout <= 0) && (timeout_tick < sys_timer->tick);
+		// semaphore 를 획득할 때는 다른 interrupt 가 못껴들게 disable 한다.
+		flag = eos_disable_interrupt();
 
 		if (sem->count > 0) {
-			/* given semaphore is now available */
-			if (!timeouted) {
-				(sem->count)--;
-				eos_restore_interrupt(prev_eflags);
-			} else if (sem->wait_queue) {
-				// if this task timeouted, wakeup another task in waiting queue
-				_os_wakeup_single(&(sem->wait_queue), sem->queue_type);
-				eos_restore_interrupt(prev_eflags);
-				eos_schedule();
-			}
-			return timeouted ? 0 : 1;
+			// count > 0 이면, count를 1 감소시키고 리턴 (성공)
+			(sem->count)--;
+			eos_restore_interrupt(flag);
+			// if (!timeouted) {
+			// (sem->count)--;
+			// eos_restore_interrupt(flag);
+			// } else if (sem->wait_queue) {
+			// 	// 현재 태스크가 timeout 됬고 wating_queue 에 task 가 있으면 
+			// 	// waiting_queue 에서 대기중인 task 를 깨운다.
+			// 	_os_wakeup_single(&(sem->wait_queue), sem->queue_type);
+			// 	eos_restore_interrupt(flag);
+			// 	eos_schedule();
+			// }
+			return 1;
 		}
 
-		/* given semaphore is not available now */
-		bool_t should_not_wait = (timeout < 0) || timeouted;
+		bool_t should_not_wait = (timeout == -1) || timeouted;
 		if (should_not_wait) {
-			eos_restore_interrupt(prev_eflags);
+			eos_restore_interrupt(flag);
 			return 0;
 		}
 
-		// PRINT("4\n");
 		// put the task into waiting queue if it should wait
-		int32u_t WAITING = 3;
 		eos_tcb_t *tsk = eos_get_current_task();
 		tsk->status = WAITING;
 		if (sem->queue_type == FIFO) {
@@ -58,19 +61,22 @@ int32u_t eos_acquire_semaphore(eos_semaphore_t *sem, int32s_t timeout) {
 			printf("Unexpected semaphore queue type.\n");
 			return -1;
 		}
-		eos_restore_interrupt(prev_eflags);
+		eos_restore_interrupt(flag);
 		eos_schedule();
 	}
 }
 
 void eos_release_semaphore(eos_semaphore_t *sem) {
-	int32u_t prev_eflags;
-
-	prev_eflags = eos_disable_interrupt();
+	// semaphore 를 release 할 때 다른 작업이 못껴들게 interrupt disable
+	int32u_t flag = eos_disable_interrupt();
+	// semaphore count 1 증가
 	(sem->count)++;
-	if (sem->wait_queue) _os_wakeup_single(&(sem->wait_queue), sem->queue_type);
-	eos_restore_interrupt(prev_eflags);
-	// PRINT("rs im %d, %d\n", eos_get_current_task()->period, eos_get_current_task()->status);
+	// wait 큐에 대기중인 태스크가 있는 경우 하나의 태스크를 선택해 깨움
+	if (sem->wait_queue) {
+		_os_wakeup_single(&(sem->wait_queue), sem->queue_type);
+	}
+	// interrupt disable 을 되돌린다.
+	eos_restore_interrupt(flag);
 	eos_schedule();
 }
 
