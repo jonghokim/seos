@@ -28,6 +28,7 @@ int32u_t eos_acquire_semaphore(eos_semaphore_t *sem, int32s_t timeout) {
 		flag = eos_disable_interrupt();
 
 		if (sem->count > 0) {
+			// semaphore 획득 가능 상태
 			// count > 0 이면, count를 1 감소시키고 리턴 (성공)
 			(sem->count)--;
 			eos_restore_interrupt(flag);
@@ -42,27 +43,30 @@ int32u_t eos_acquire_semaphore(eos_semaphore_t *sem, int32s_t timeout) {
 			// 	eos_schedule();
 			// }
 			return 1;
-		}
-
-		bool_t should_not_wait = (timeout == -1) || timeouted;
-		if (should_not_wait) {
-			eos_restore_interrupt(flag);
-			return 0;
-		}
-
-		// put the task into waiting queue if it should wait
-		eos_tcb_t *tsk = eos_get_current_task();
-		tsk->status = WAITING;
-		if (sem->queue_type == FIFO) {
-    		_os_add_node_tail(&(sem->wait_queue), &(tsk->node));
-		} else if (sem->queue_type == PRIORITY) {
-    		_os_add_node_priority(&(sem->wait_queue), &(tsk->node));
 		} else {
-			printf("Unexpected semaphore queue type.\n");
-			return -1;
+			// semaphore 획득 불가능 상태 
+			bool_t should_not_wait = (timeout == -1) || timeouted;
+			if (should_not_wait) {
+				eos_restore_interrupt(flag);
+				return 0;
+			}
+
+			// 현재 task 를 WAITING 상태로 바꿔준다.
+			eos_tcb_t *task = eos_get_current_task();
+			int32u_t WAITING = 3;
+			task->status = WAITING;
+			if (sem->queue_type == PRIORITY) {
+				// PRIORITY 면 제일 우선순위에 맞게 wait_queue 에 task 를 추가한다.
+	    		_os_add_node_priority(&(sem->wait_queue), &(task->node));
+			} else if (sem->queue_type == FIFO) {
+				// FIFO 면 제일 wait_queue 의 맨 끝에 task 를 추가한다.
+	    		_os_add_node_tail(&(sem->wait_queue), &(task->node));
+			}
+			// disable 시킨 interrupt 를 복구한다.
+			eos_restore_interrupt(flag);
+			eos_schedule();
 		}
-		eos_restore_interrupt(flag);
-		eos_schedule();
+	
 	}
 }
 
