@@ -22,8 +22,6 @@ int32u_t eos_acquire_semaphore(eos_semaphore_t *sem, int32s_t timeout) {
 	int32u_t flag;
 
 	while (1) {
-		// timeout 됬는지 여부를 boolean 으로 저장한다.
-		bool_t timeouted = (timeout <= 0) && (timeout_tick < sys_timer->tick);
 		// semaphore 를 획득할 때는 다른 interrupt 가 못껴들게 disable 한다.
 		flag = eos_disable_interrupt();
 
@@ -32,41 +30,40 @@ int32u_t eos_acquire_semaphore(eos_semaphore_t *sem, int32s_t timeout) {
 			// count > 0 이면, count를 1 감소시키고 리턴 (성공)
 			(sem->count)--;
 			eos_restore_interrupt(flag);
-			// if (!timeouted) {
-			// (sem->count)--;
-			// eos_restore_interrupt(flag);
-			// } else if (sem->wait_queue) {
-			// 	// 현재 태스크가 timeout 됬고 wating_queue 에 task 가 있으면 
-			// 	// waiting_queue 에서 대기중인 task 를 깨운다.
-			// 	_os_wakeup_single(&(sem->wait_queue), sem->queue_type);
-			// 	eos_restore_interrupt(flag);
-			// 	eos_schedule();
-			// }
 			return 1;
 		} else {
 			// semaphore 획득 불가능 상태 
-			bool_t should_not_wait = (timeout == -1) || timeouted;
-			if (should_not_wait) {
+			if (timeout == 0) {
+				// 다른 태스크에 의해 깨어날 때까지 대기
+				// 현재 task 를 WAITING 상태로 바꿔준다.
+				eos_tcb_t *task = eos_get_current_task();
+				int32u_t WAITING = 3;
+				task->status = WAITING;
+				if (sem->queue_type == PRIORITY) {
+					// PRIORITY 면 제일 우선순위에 맞게 wait_queue 에 task 를 추가한다.
+	    			_os_add_node_priority(&(sem->wait_queue), &(task->node));
+				} else if (sem->queue_type == FIFO) {
+					// FIFO 면 제일 wait_queue 의 맨 끝에 task 를 추가한다.
+	    			_os_add_node_tail(&(sem->wait_queue), &(task->node));
+				}
+				// disable 시킨 interrupt 를 복구한다.
+				eos_restore_interrupt(flag);
+				eos_schedule();
+			} else if (timeout == -1) {
+				// timeout 이 -1 이면 바로 return
 				eos_restore_interrupt(flag);
 				return 0;
+			} else if (timeout >= 1) {
+				// timeout 됬는지 여부를 boolean 으로 저장한다.
+				if (timeout_tick < sys_timer->tick) {
+					eos_restore_interrupt(flag);
+					return 0;
+				} else {
+					// timeout 되지 않았으면 계속 기다린다.
+					continue;
+				}
 			}
-
-			// 현재 task 를 WAITING 상태로 바꿔준다.
-			eos_tcb_t *task = eos_get_current_task();
-			int32u_t WAITING = 3;
-			task->status = WAITING;
-			if (sem->queue_type == PRIORITY) {
-				// PRIORITY 면 제일 우선순위에 맞게 wait_queue 에 task 를 추가한다.
-	    		_os_add_node_priority(&(sem->wait_queue), &(task->node));
-			} else if (sem->queue_type == FIFO) {
-				// FIFO 면 제일 wait_queue 의 맨 끝에 task 를 추가한다.
-	    		_os_add_node_tail(&(sem->wait_queue), &(task->node));
-			}
-			// disable 시킨 interrupt 를 복구한다.
-			eos_restore_interrupt(flag);
-			eos_schedule();
 		}
-	
 	}
 }
 
